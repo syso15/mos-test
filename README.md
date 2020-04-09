@@ -1,2 +1,2 @@
 # mos-test
-Repository for MOS
+Repository for MOS assessment
