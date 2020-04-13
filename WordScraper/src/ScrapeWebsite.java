@@ -14,45 +14,36 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class ScrapeWebsite {
-
-	/*
-	 public void allLinksInUrl() throws IOException {
-
-        Document doc = Jsoup.connect("https://www.wikipedia.org").get();
-
-        Elements links = doc.select("a[href]");
-
-        for (Element link : links) {
-
-            System.out.println("\nlink : " + link.attr("href"));
-
-            System.out.println("text : " + link.text());
-
-        }
-
-    }
-    */
 	
 	public static void main(String args[]){
 		print("running...");
 		Document document;
 		try {
-			//Get Document object after parsing the html from given url.
-			String url = "https://m.blog.naver.com/PostView.nhn?blogId=boooovely&logNo=221890546101&searchKeyword=%EB%A9%94%EC%9D%B4%ED%81%AC%EC%97%85";
-	        document = Jsoup.connect(url).get();
-	        System.out.println(document.body().children().text());
+			String url = "https://news.chosun.com/site/data/html_dir/2020/04/13/2020041300890.html";
+					//"https://m.blog.naver.com/jiro6134/221896897879";
+			document = Jsoup.connect(url).get();
+	        Elements content = document.getElementsByClass("news_body");
+	        for (int i=0; i < content.size(); i++) {
+	        	System.out.println(content.get(i).text());
+	        }
 	        
+	        //Arraylist to hold visited pages
 	        List<String> visitedUrls = new ArrayList<>();
 	        visitedUrls.add(url);
+	        //queue to hold links from a page (iterative traversal)
 	        Queue<Elements> q = new LinkedList<>();
             Elements links = document.select("a[href]");
+
             q.add(links);
             while(!q.isEmpty())
             {
+            	//get current set of links from queue
             	Elements curr_links = q.poll();
     	        for (Element link : curr_links) {
+    	        	//for each link, get url
     	        	String next_url = link.absUrl("href");
-    	        	if(visitedUrls.contains(next_url))
+ 		          
+    	        	if(!next_url.contains("chosun") || visitedUrls.contains(next_url))
     	        	{
     	        		continue;
     	        	}
@@ -60,14 +51,18 @@ public class ScrapeWebsite {
     	        	{
     	        		visitedUrls.add(next_url);
     	        		document = Jsoup.connect(next_url).get();
-    	        		System.out.println(document.body().children().text());
+    	        		Elements info = document.getElementsByClass("news_body");
+    	        		
+    	        		for (int i=0; i < info.size(); i++) {
+    	    	        	System.out.println(info.get(i).text());
+   
+    	    	        }
     	        		Elements new_links = document.select("a[href]");
     	        		q.add(new_links);
     	        	}
     	        }
             }
 
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
