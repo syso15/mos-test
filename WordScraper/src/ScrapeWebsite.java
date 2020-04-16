@@ -2,6 +2,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -15,7 +16,7 @@ import org.jsoup.select.Elements;
 
 public class ScrapeWebsite {
 	
-	public static void main(String args[]){
+	public static void main(String args[]) throws IOException{
 		print("running...");
 		//create print writer to write to file
 		
@@ -32,38 +33,45 @@ public class ScrapeWebsite {
 
 		//begin scraping for text content
 		Document document;
-		try {
+        //Arraylist to hold visited pages
+        List<String> visitedUrls = new ArrayList<>();
+        //queue to hold links from a page (iterative traversal)
+        Queue<Elements> q = new LinkedList<>();
+        
+			try {
+			
 			String url = "https://news.chosun.com/site/data/html_dir/2020/04/13/2020041300890.html";
-			document = Jsoup.connect(url).get();
-	        Elements content = document.getElementsByClass("news_body");
+			document = Jsoup.connect(url).userAgent("Mozilla").ignoreContentType(true).followRedirects(true).ignoreHttpErrors(true).get();
+			visitedUrls.add(url.toLowerCase());
+			Elements content = document.getElementsByClass("news_body");
 	        for (int i=0; i < content.size(); i++) {
 	        	writer.println(content.get(i).text());
 	        }
-	        
-	        //Arraylist to hold visited pages
-	        List<String> visitedUrls = new ArrayList<>();
-	        visitedUrls.add(url.toLowerCase());
-	        //queue to hold links from a page (iterative traversal)
-	        Queue<Elements> q = new LinkedList<>();
-            Elements links = document.select("a[href]");
-
-            q.add(links);
+	        Elements links = document.select("a[href]");
+	        q.add(links);
+			} catch (MalformedURLException e) {
+			e.printStackTrace(); 	
+			}	
+         
+            
             while(!q.isEmpty())
             {
             	//get current set of links from queue
             	Elements curr_links = q.poll();
     	        for (Element link : curr_links) {
     	        	//for each link, get url
-    	        	String next_url = link.absUrl("href");
+    	        	String next_url;
+    	        	try {
+    	            next_url = link.absUrl("href");
  		          
-    	        	if(!next_url.contains("chosun") || visitedUrls.contains(next_url.toLowerCase()))
+    	        	if(!next_url.contains("chosun") || !next_url.contains("http") || !next_url.contains("https")|| visitedUrls.contains(next_url.toLowerCase()))
     	        	{
     	        		continue;
     	        	}
     	        	else
     	        	{
     	        		visitedUrls.add(next_url.toLowerCase());
-    	        		document = Jsoup.connect(next_url).get();
+    	        		document = Jsoup.connect(next_url).userAgent("Mozilla").followRedirects(true).ignoreContentType(true).ignoreHttpErrors(true).get();
     	        		Elements info = document.getElementsByClass("news_body");
     	        		
     	        		for (int i=0; i < info.size(); i++) {
@@ -73,15 +81,17 @@ public class ScrapeWebsite {
     	        		Elements new_links = document.select("a[href]");
     	        		q.add(new_links);
     	        	}
+        	        } catch (MalformedURLException e) {
+        	            throw new RuntimeException(e);
+        	        }
     	        }
             }
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    		print("done");
+            print("done");
 
 	}
+    		
+
+	
 	public static void print(String string) {
 		System.out.println(string);
 	}
